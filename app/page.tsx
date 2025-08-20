@@ -36,6 +36,23 @@ export default function Home() {
         const { word } = await getRandomWord();
         const { withoutAccents } = await getWordData();
         
+        console.log('=== DEBUG INICIALIZAÇÃO ===');
+        console.log('Palavra escolhida:', word);
+        console.log('Tamanho do wordSet:', withoutAccents.size);
+        console.log('Exemplos de palavras no wordSet:', Array.from(withoutAccents).slice(0, 10));
+        console.log('Teste com palavra simples "amigo":', withoutAccents.has('amigo'));
+        console.log('Teste com palavra simples "casa":', withoutAccents.has('casa'));
+        console.log('Teste com palavra simples "festa":', withoutAccents.has('festa'));
+        
+        // Teste da função removeAccents
+        console.log('=== TESTE REMOVE ACCENTS ===');
+        console.log('removeAccents("amigo"):', removeAccents('amigo'));
+        console.log('removeAccents("casa"):', removeAccents('casa'));
+        console.log('removeAccents("festa"):', removeAccents('festa'));
+        console.log('removeAccents("água"):', removeAccents('água'));
+        console.log('removeAccents("força"):', removeAccents('força'));
+        console.log('==========================');
+        
         setSolution(word.toLowerCase());
         setWordSet(withoutAccents);
         setGameCount(1); // Primeiro jogo
@@ -169,6 +186,15 @@ export default function Home() {
          console.log('Está no wordSet?', wordSet.has(removeAccents(currentGuessString)));
          console.log('Tamanho do wordSet:', wordSet.size);
        }
+      
+      // Debug sempre ativo para validação
+      console.log('=== VALIDAÇÃO DE PALAVRA ===');
+      console.log('Palavra digitada:', currentGuessString);
+      console.log('Palavra sem acentos:', removeAccents(currentGuessString));
+      console.log('Tamanho do wordSet:', wordSet.size);
+      console.log('Está no wordSet?', wordSet.has(removeAccents(currentGuessString)));
+      console.log('Primeiras 20 palavras do wordSet:', Array.from(wordSet).slice(0, 20));
+      console.log('==========================');
       
       if (!wordSet.has(removeAccents(currentGuessString))) {
                         toast.error('Palavra não encontrada', {

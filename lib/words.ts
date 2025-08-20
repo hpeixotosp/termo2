@@ -126,9 +126,30 @@ async function fetchWordList(): Promise<{ withAccents: Set<string>, withoutAccen
 
   console.log('Palavras de 5 letras após filtros:', fiveLetterWords.size);
   console.log('Exemplos de palavras de 5 letras:', Array.from(fiveLetterWords).slice(0, 20));
+  
+  // Debug adicional para entender o problema
+  console.log('=== DEBUG FILTRAGEM ===');
+  console.log('Total de palavras antes do filtro:', allWords.length);
+  console.log('Primeiras 20 palavras antes do filtro:', allWords.slice(0, 20));
+  console.log('Regex test para "amigo":', /^[a-zà-úç]+$/.test('amigo'));
+  console.log('Regex test para "casa":', /^[a-zà-úç]+$/.test('casa'));
+  console.log('Regex test para "festa":', /^[a-zà-úç]+$/.test('festa'));
+  console.log('Tamanho do negativeWords:', negativeWords.size);
+  console.log('Exemplos de negativeWords:', Array.from(negativeWords).slice(0, 10));
+  console.log('========================');
 
   const withAccents = new Set(fiveLetterWords);
   const withoutAccents = new Set(Array.from(fiveLetterWords).map(removeAccents));
+  
+  // Debug adicional para o resultado final
+  console.log('=== DEBUG RESULTADO FINAL ===');
+  console.log('withAccents size:', withAccents.size);
+  console.log('withoutAccents size:', withoutAccents.size);
+  console.log('Exemplos de withoutAccents:', Array.from(withoutAccents).slice(0, 20));
+  console.log('Teste "amigo" em withoutAccents:', withoutAccents.has('amigo'));
+  console.log('Teste "casa" em withoutAccents:', withoutAccents.has('casa'));
+  console.log('Teste "festa" em withoutAccents:', withoutAccents.has('festa'));
+  console.log('=============================');
 
   return { withAccents, withoutAccents, sourceMap };
 }
