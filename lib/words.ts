@@ -63,17 +63,17 @@ async function validateWordInDicio(word: string): Promise<boolean> {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.log(`❌ Erro na tentativa ${attempt} para "${word}":`, errorMessage);
       
-      // Se é erro de CORS/network, considera a palavra válida se está nas nossas fontes
+      // Se é erro de CORS/network, tenta novamente ou rejeita a palavra
       if (errorMessage.includes('CORS') || errorMessage.includes('Failed to fetch')) {
-        console.log(`🔄 CORS/Network error - assumindo palavra válida das fontes: "${word}"`);
-        return true; // Assume válida se veio das nossas fontes confiáveis
+        console.log(`🔄 CORS/Network error - tentando novamente para: "${word}"`);
+        continue; // Continua tentando em vez de assumir válida
       }
     }
   }
 
-  // Após esgotar tentativas, assume válida (veio das nossas fontes)
-  console.log(`🔄 Esgotou tentativas - assumindo palavra válida das fontes: "${word}"`);
-  return true;
+  // Após esgotar tentativas, rejeita a palavra para garantir qualidade
+  console.log(`❌ Esgotou tentativas - rejeitando palavra: "${word}"`);
+  return false;
 }
 
 async function fetchWordList(): Promise<{ withAccents: Set<string>, withoutAccents: Set<string>, sourceMap: Map<string, string> }> {
@@ -179,12 +179,13 @@ export async function getRandomWord(): Promise<{word: string, source: string}> {
 
   if (!validWord) {
     console.log('⚠️ Não foi possível encontrar uma palavra válida após', maxAttempts, 'tentativas');
-    // Lista expandida de palavras garantidamente válidas como fallback
+    // Lista de palavras garantidamente válidas em português como fallback
     const fallbackWords = [
       'amigo', 'canto', 'dente', 'festa', 'gente', 'hotel', 'idade', 'junto', 'livro', 'mundo',
       'noite', 'ontem', 'papel', 'quero', 'rosto', 'santo', 'tempo', 'verde', 'zebra', 'zumbi',
-      'barro', 'carro', 'ferro', 'morro', 'torre', 'terra', 'guerra', 'serra', 'porra', 'garra',
-      'casa', 'mesa', 'rosa', 'pesa', 'lisa', 'tesa', 'fase', 'base', 'dose', 'pose'
+      'barro', 'carro', 'ferro', 'morro', 'torre', 'terra', 'guerra', 'serra', 'garra',
+      'casa', 'mesa', 'rosa', 'pesa', 'lisa', 'fase', 'base', 'dose', 'pose', 'vida',
+      'porta', 'força', 'morte', 'sonho', 'risco', 'pista', 'canto', 'vento', 'fogo', 'água'
     ];
     const fallbackIndex = seed % fallbackWords.length;
     word = fallbackWords[fallbackIndex];
