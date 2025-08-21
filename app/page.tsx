@@ -28,7 +28,8 @@ export default function Home() {
       try {
         // Adiciona um timestamp único para garantir palavras diferentes
         const timestamp = Date.now();
-        console.log('Inicializando jogo com timestamp:', timestamp);
+        console.log('🚀 INICIALIZANDO JOGO - Timestamp:', timestamp);
+        console.log('🔄 Número de inicializações detectadas');
         
         // Mostra instruções imediatamente para melhor UX
         setShowInstructions(true);
@@ -55,6 +56,13 @@ export default function Home() {
         
         setSolution(word.toLowerCase());
         setWordSet(withoutAccents);
+        
+        // Debug adicional para verificar se o estado foi definido
+        console.log('=== VERIFICAÇÃO DO ESTADO ===');
+        console.log('Solution definida:', word.toLowerCase());
+        console.log('WordSet definido com tamanho:', withoutAccents.size);
+        console.log('==========================');
+        
         setGameCount(1); // Primeiro jogo
         setPreviousWords(prev => new Set([...Array.from(prev), word.toLowerCase()]));
         
@@ -194,7 +202,18 @@ export default function Home() {
       console.log('Tamanho do wordSet:', wordSet.size);
       console.log('Está no wordSet?', wordSet.has(removeAccents(currentGuessString)));
       console.log('Primeiras 20 palavras do wordSet:', Array.from(wordSet).slice(0, 20));
+      console.log('Solution atual:', solution);
       console.log('==========================');
+      
+      // Verifica se o wordSet está vazio (problema crítico)
+      if (wordSet.size === 0) {
+        console.error('❌ CRÍTICO: wordSet está vazio!');
+        toast.error('Erro interno do jogo. Recarregue a página.', {
+          position: 'top-center',
+          duration: 5000,
+        });
+        return;
+      }
       
       if (!wordSet.has(removeAccents(currentGuessString))) {
                         toast.error('Palavra não encontrada', {
@@ -290,6 +309,17 @@ export default function Home() {
       }
     }
   }, [guesses, currentGuessIndex, isGameOver, solution, cursorPosition, wordSet, keyStatuses]);
+  
+  // Monitora mudanças no wordSet para debug
+  useEffect(() => {
+    console.log('🔍 wordSet mudou - Novo tamanho:', wordSet.size);
+    if (wordSet.size > 0) {
+      console.log('✅ wordSet carregado com sucesso');
+      console.log('Primeiras 10 palavras:', Array.from(wordSet).slice(0, 10));
+    } else {
+      console.log('❌ wordSet ainda está vazio');
+    }
+  }, [wordSet]);
   
   const handleTileClick = (position: number) => {
     setCursorPosition(position);
