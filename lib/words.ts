@@ -16,10 +16,29 @@ const removeAccents = (str: string) =>
   str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 async function validateWordInDicio(word: string): Promise<boolean> {
-  // Removendo validação no Dicio que está falhando por CORS
-  // Vamos confiar nas fontes de palavras que já são confiáveis
-  console.log(`✅ Aceitando palavra "${word}" sem validação externa`);
-  return true;
+  try {
+    console.log(`🔍 Validando palavra "${word}" via API local...`);
+    
+    const response = await fetch('/api/validate-word', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ word }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`✅ Validação para "${word}": ${result.isValid ? 'VÁLIDA' : 'INVÁLIDA'}`);
+      return result.isValid;
+    } else {
+      console.log(`❌ Erro na API para "${word}": ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`❌ Erro ao validar "${word}":`, error);
+    return false;
+  }
 }
 
 async function fetchWordList(): Promise<{ withAccents: Set<string>, withoutAccents: Set<string>, sourceMap: Map<string, string> }> {
@@ -136,12 +155,53 @@ export async function getRandomWord(): Promise<{word: string, source: string}> {
   const timestamp = Date.now();
   const seed = timestamp % 1000000; // Módulo para manter número gerenciável
   
-  // Escolhe uma palavra diretamente da lista
-  const randomIndex = seed % list.length;
-  const word = list[randomIndex];
-  const source = sourceMap.get(word) || 'Origem desconhecida';
+  let validWord = false;
+  let word = '';
+  let source = '';
+  let attempts = 0;
+  const maxAttempts = 10; // Reduzido para não demorar muito
+
+  console.log('=== BUSCANDO PALAVRA VÁLIDA ===');
+  console.log('Timestamp:', timestamp, 'Seed:', seed);
+  console.log('Total de palavras disponíveis:', list.length);
   
-  console.log('=== PALAVRA ESCOLHIDA ===');
+  while (!validWord && attempts < maxAttempts) {
+    // Usa seed + attempts para gerar índice pseudo-aleatório
+    const randomIndex = (seed + attempts * 7) % list.length;
+    word = list[randomIndex];
+    attempts++;
+    
+    console.log(`Tentativa ${attempts}: "${word}" (índice: ${randomIndex})`);
+    
+    // Valida a palavra no Dicio via nossa API
+    validWord = await validateWordInDicio(word);
+    
+    if (validWord) {
+      console.log(`✅ Palavra válida encontrada: "${word}"`);
+    } else {
+      console.log(`❌ Palavra inválida: "${word}"`);
+    }
+  }
+
+  if (!validWord) {
+    console.log('⚠️ Não foi possível encontrar uma palavra válida após', maxAttempts, 'tentativas');
+    // Lista de palavras garantidamente válidas em português como fallback
+    const fallbackWords = [
+      'amigo', 'canto', 'dente', 'festa', 'gente', 'hotel', 'idade', 'junto', 'livro', 'mundo',
+      'noite', 'ontem', 'papel', 'quero', 'rosto', 'santo', 'tempo', 'verde', 'zebra', 'zumbi',
+      'barro', 'carro', 'ferro', 'morro', 'torre', 'terra', 'guerra', 'serra', 'garra',
+      'casa', 'mesa', 'rosa', 'pesa', 'lisa', 'fase', 'base', 'dose', 'pose', 'vida',
+      'porta', 'força', 'morte', 'sonho', 'risco', 'pista', 'canto', 'vento', 'fogo', 'água'
+    ];
+    const fallbackIndex = seed % fallbackWords.length;
+    word = fallbackWords[fallbackIndex];
+    source = 'Fallback - Palavras Confiáveis';
+    console.log(`🔄 Usando palavra de fallback: "${word}"`);
+  } else {
+    source = sourceMap.get(word) || 'Origem desconhecida';
+  }
+  
+  console.log('=== PALAVRA FINAL ===');
   console.log('Palavra:', word);
   console.log('Fonte:', source);
   console.log('Timestamp:', timestamp);
