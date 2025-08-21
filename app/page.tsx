@@ -12,7 +12,9 @@ const removeAccents = (str: string) => str.normalize('NFD').replace(/[\u0300-\u0
 
 export default function Home() {
   const [solution, setSolution] = useState<string>('');
-  const [guesses, setGuesses] = useState<string[][]>(Array(6).fill(Array(5).fill('')));
+  const [guesses, setGuesses] = useState<string[][]>(() => 
+    Array.from({ length: 6 }, () => Array(5).fill(''))
+  );
   const [currentGuessIndex, setCurrentGuessIndex] = useState(0);
   const [keyStatuses, setKeyStatuses] = useState<KeyStatus>({});
   const [wordSet, setWordSet] = useState<Set<string>>(new Set());
@@ -139,7 +141,7 @@ export default function Home() {
 
       if (newWord) {
         // Reseta todos os estados do jogo
-        setGuesses(Array(6).fill(Array(5).fill('')));
+        setGuesses(Array.from({ length: 6 }, () => Array(5).fill('')));
         setCurrentGuessIndex(0);
         setKeyStatuses({});
         setIsGameOver(false);
@@ -179,8 +181,8 @@ export default function Home() {
 
     if (key === 'enter') {
       const currentGuessString = currentGuessArray.join(''); // Junta para validação
-      if (currentGuessString.length < 5) {
-        toast.error('Palavra muito curta', {
+      if (currentGuessString.length !== 5) {
+        toast.error('Palavra deve ter exatamente 5 letras', {
           position: 'top-center',
           duration: 3000,
         });
