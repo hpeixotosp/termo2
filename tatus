@@ -1,3 +1,0 @@
-[33m10b8961[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix: remove tailwindcss-animate dependency from config
-[33mc702792[m fix: remove unused shadcn/ui components and dependencies
-[33m9e65c63[m fix: remove database-related files causing build errors
