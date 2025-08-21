@@ -96,17 +96,35 @@ async function fetchWordList(): Promise<{ withAccents: Set<string>, withoutAccen
   console.log('Teste "amigo" em withoutAccents:', withoutAccents.has('amigo'));
   console.log('Teste "casa" em withoutAccents:', withoutAccents.has('casa'));
   console.log('Teste "festa" em withoutAccents:', withoutAccents.has('festa'));
+  console.log('Tipo de retorno withoutAccents:', typeof withoutAccents);
+  console.log('É instância de Set?', withoutAccents instanceof Set);
   console.log('=============================');
-
+  
+  // Verifica se há algum problema com o Set
+  if (withoutAccents.size === 0) {
+    console.error('❌ CRÍTICO: withoutAccents está vazio após processamento!');
+    console.error('fiveLetterWords size:', fiveLetterWords.size);
+    console.error('Exemplos de fiveLetterWords:', Array.from(fiveLetterWords).slice(0, 10));
+  }
+  
   return { withAccents, withoutAccents, sourceMap };
 }
 
 let wordCache: { withAccents: Set<string>, withoutAccents: Set<string>, sourceMap: Map<string, string> } | null = null;
 
 export async function getWordData() {
+  console.log('🔍 getWordData chamado');
+  console.log('Cache atual:', wordCache ? 'existe' : 'não existe');
+  
   if (!wordCache) {
+    console.log('📥 Criando novo cache...');
     wordCache = await fetchWordList();
+    console.log('✅ Cache criado com tamanho:', wordCache.withoutAccents.size);
+  } else {
+    console.log('📋 Usando cache existente com tamanho:', wordCache.withoutAccents.size);
   }
+  
+  console.log('🔄 Retornando dados com tamanho:', wordCache.withoutAccents.size);
   return wordCache;
 }
 

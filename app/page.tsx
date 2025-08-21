@@ -39,7 +39,9 @@ export default function Home() {
         
         console.log('=== DEBUG INICIALIZAÇÃO ===');
         console.log('Palavra escolhida:', word);
-        console.log('Tamanho do wordSet:', withoutAccents.size);
+        console.log('Tamanho do wordSet recebido:', withoutAccents.size);
+        console.log('Tipo do withoutAccents:', typeof withoutAccents);
+        console.log('É uma instância de Set?', withoutAccents instanceof Set);
         console.log('Exemplos de palavras no wordSet:', Array.from(withoutAccents).slice(0, 10));
         console.log('Teste com palavra simples "amigo":', withoutAccents.has('amigo'));
         console.log('Teste com palavra simples "casa":', withoutAccents.has('casa'));
