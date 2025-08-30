@@ -1,0 +1,19 @@
+name: termo2-frontend
+services:
+- name: termo2-frontend
+  source_dir: /
+  github:
+    repo: hpeixotosp/termo2
+    branch: main
+  run_command: npm start
+  build_command: npm run build
+  environment_slug: node-js
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  routes:
+  - path: /
+  envs:
+  - key: NEXT_PUBLIC_API_URL
+    value: http://143.110.196.243:3000
+  - key: NODE_ENV
+    value: production

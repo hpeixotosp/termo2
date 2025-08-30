@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import GameBoard from '@/components/GameBoard';
 import Keyboard from '@/components/Keyboard';
-import { getRandomWord, getWordData } from '@/lib/words';
+import { apiService } from '@/lib/api';
 import { getLetterStatuses } from '@/lib/utils';
 import { KeyStatus } from '@/types';
 
@@ -36,18 +36,18 @@ export default function Home() {
         // Mostra instruções imediatamente para melhor UX
         setShowInstructions(true);
         
-        const { word } = await getRandomWord();
-        const { withoutAccents } = await getWordData();
+        const { word } = await apiService.getDailyWord();
+        const stats = await apiService.getDictionaryStats();
         
         console.log('=== DEBUG INICIALIZAÇÃO ===');
         console.log('Palavra escolhida:', word);
-        console.log('Tamanho do wordSet recebido:', withoutAccents.size);
-        console.log('Tipo do withoutAccents:', typeof withoutAccents);
-        console.log('É uma instância de Set?', withoutAccents instanceof Set);
-        console.log('Exemplos de palavras no wordSet:', Array.from(withoutAccents).slice(0, 10));
-        console.log('Teste com palavra simples "amigo":', withoutAccents.has('amigo'));
-        console.log('Teste com palavra simples "casa":', withoutAccents.has('casa'));
-        console.log('Teste com palavra simples "festa":', withoutAccents.has('festa'));
+        console.log('Tamanho do wordSet recebido:', stats.totalWords);
+        console.log('Tipo do stats:', typeof stats);
+        console.log('É uma instância de objeto?', stats instanceof Object);
+        console.log('Exemplos de palavras no wordSet:', stats.examples);
+        console.log('Teste com palavra simples "amigo":', stats.examples.includes('amigo'));
+        console.log('Teste com palavra simples "casa":', stats.examples.includes('casa'));
+        console.log('Teste com palavra simples "festa":', stats.examples.includes('festa'));
         
         // Teste da função removeAccents
         console.log('=== TESTE REMOVE ACCENTS ===');
@@ -59,12 +59,12 @@ export default function Home() {
         console.log('==========================');
         
         setSolution(word.toLowerCase());
-        setWordSet(withoutAccents);
+        setWordSet(new Set(stats.examples));
         
         // Debug adicional para verificar se o estado foi definido
         console.log('=== VERIFICAÇÃO DO ESTADO ===');
         console.log('Solution definida:', word.toLowerCase());
-        console.log('WordSet definido com tamanho:', withoutAccents.size);
+        console.log('WordSet definido com tamanho:', stats.examples.length);
         console.log('==========================');
         
         setGameCount(1); // Primeiro jogo
@@ -113,7 +113,8 @@ export default function Home() {
 
       // Tenta encontrar uma palavra diferente
       while (attempts < maxAttempts) {
-        const { word, source } = await getRandomWord();
+        const { word } = await apiService.getDailyWord();
+        const source = 'API Backend';
         attempts++;
         
         // Verifica se a palavra já foi usada
