@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: termo_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - termo_network
+
+  backend:
+    build: ./backend
+    container_name: termo_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      API_URL: http://143.110.196.243:3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mysql
+    networks:
+      - termo_network
+
+  frontend:
+    build: .
+    container_name: termo_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://143.110.196.243:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - termo_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: termo_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - termo_network
+
+volumes:
+  mysql_data:
+
+networks:
+  termo_network:
+    driver: bridge

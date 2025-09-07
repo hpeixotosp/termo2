@@ -2,6 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import fetch from 'node-fetch';
+import { 
+  testConnection, 
+  initializeDatabase, 
+  getRandomWord as getRandomWordFromDB,
+  saveGameStats,
+  getGameStats
+} from './database.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -216,14 +223,16 @@ app.get('/health', (req, res) => {
 });
 
 // Rota para obter palavra do dia
-app.get('/api/daily-word', (req, res) => {
+app.get('/api/daily-word', async (req, res) => {
   try {
-    const word = getRandomWord();
+    const wordData = await getRandomWordFromDB();
     res.json({ 
-      word,
+      word: wordData.word,
+      source: wordData.source,
       timestamp: Date.now()
     });
   } catch (error) {
+    console.error('Erro ao obter palavra do dia:', error);
     res.status(500).json({ error: 'Erro ao obter palavra do dia' });
   }
 });
@@ -266,19 +275,52 @@ app.post('/api/validate-guess', (req, res) => {
 });
 
 // Rota para obter estatísticas do dicionário
-app.get('/api/dictionary-stats', (req, res) => {
-  res.json({
-    totalWords: wordCache.fiveLetterWords.size,
-    lastUpdate: wordCache.lastUpdate,
-    sources: WORD_SOURCES.length,
-    examples: Array.from(wordCache.fiveLetterWords).slice(0, 20)
-  });
+app.get('/api/dictionary-stats', async (req, res) => {
+  try {
+    const gameStats = await getGameStats();
+    res.json({
+      totalWords: wordCache.fiveLetterWords.size,
+      lastUpdate: wordCache.lastUpdate,
+      sources: WORD_SOURCES.length,
+      examples: Array.from(wordCache.fiveLetterWords).slice(0, 20),
+      gameStats
+    });
+  } catch (error) {
+    console.error('Erro ao obter estatísticas:', error);
+    res.status(500).json({ error: 'Erro ao obter estatísticas' });
+  }
+});
+
+// Rota para salvar estatísticas do jogo
+app.post('/api/game-stats', async (req, res) => {
+  try {
+    const { word, attempts, won } = req.body;
+    
+    if (!word || !attempts || typeof won !== 'boolean') {
+      return res.status(400).json({ error: 'Dados inválidos' });
+    }
+    
+    await saveGameStats(word, attempts, won);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erro ao salvar estatísticas:', error);
+    res.status(500).json({ error: 'Erro ao salvar estatísticas' });
+  }
 });
 
 // Inicializar cache na primeira execução
 app.listen(PORT, async () => {
   console.log(`🚀 Servidor Termo2 rodando na porta ${PORT}`);
   console.log(`🌐 Acesse: http://localhost:${PORT}`);
+  
+  // Testar conexão com banco de dados
+  const dbConnected = await testConnection();
+  if (dbConnected) {
+    await initializeDatabase();
+    console.log('✅ Banco de dados inicializado');
+  } else {
+    console.log('⚠️ Usando fallback para palavras (banco não disponível)');
+  }
   
   // Carregar palavras na inicialização
   await fetchWordLists();

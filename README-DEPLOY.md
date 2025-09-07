@@ -1,227 +1,214 @@
-# 🚀 Termo2 - Deploy na DigitalOcean
+# 🚀 Deploy do Termo para DigitalOcean
 
-Este documento descreve como migrar e implantar a aplicação Termo2 na infraestrutura da DigitalOcean, seguindo a arquitetura cliente-servidor especificada.
+Este guia explica como fazer o deploy completo do jogo Termo para o DigitalOcean Droplet.
 
-## 📋 Arquitetura da Solução
+## 📋 Pré-requisitos
 
-### Frontend (DigitalOcean App Platform - Gratuito)
-- **Plataforma**: DigitalOcean App Platform
-- **Tipo**: Static Site (Next.js)
-- **Plano**: Starter (gratuito)
-- **Responsabilidades**: Interface do usuário, renderização da grade e teclado
+- Conta no DigitalOcean
+- Droplet com Ubuntu 20.04+ configurado
+- Acesso SSH ao servidor
+- Docker e Docker Compose instalados
 
-### Backend (Servidor DigitalOcean - Pago)
-- **IP**: 143.110.196.243
-- **Tecnologia**: Node.js + Express
-- **Containerização**: Docker
-- **Responsabilidades**: Lógica do jogo, validação, API REST
+## 🔧 Configuração do Servidor
 
-## 🛠️ Pré-requisitos
-
-1. **Conta DigitalOcean** ativa
-2. **Acesso SSH** ao servidor 143.110.196.243
-3. **Docker** instalado localmente
-4. **Git** configurado com acesso ao repositório
-
-## 📁 Estrutura do Projeto
-
-```
-termo2/
-├── app/                    # Frontend Next.js
-├── components/            # Componentes React
-├── lib/                   # Utilitários e API
-├── backend/               # Backend Node.js
-│   ├── src/
-│   │   └── server.js      # Servidor Express
-│   ├── package.json       # Dependências do backend
-│   ├── Dockerfile         # Containerização
-│   ├── docker-compose.yml # Orquestração local
-│   └── deploy.sh          # Script de deploy
-├── .do/                   # Configuração DigitalOcean
-│   └── app.yaml          # Deploy do frontend
-└── README-DEPLOY.md       # Este arquivo
-```
-
-## 🚀 Deploy do Backend
-
-### Passo 1: Preparar o Backend Localmente
-
+### 1. Conectar ao servidor
 ```bash
-cd backend
-npm install
+ssh ubuntu@143.110.196.243
 ```
 
-### Passo 2: Testar Localmente
-
+### 2. Instalar Docker e Docker Compose
 ```bash
-# Desenvolvimento
-npm run dev
+# Instalar Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker ubuntu
 
-# Ou com Docker
-docker-compose up --build
+# Instalar Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Logout e login novamente para aplicar as permissões
+exit
+ssh ubuntu@143.110.196.243
 ```
 
-### Passo 3: Deploy no Servidor
+## 🚀 Deploy Automático
 
+### Opção 1: Deploy via script (Recomendado)
 ```bash
-# Tornar o script executável
-chmod +x deploy.sh
-
-# Executar deploy
+# No seu computador local
 ./deploy.sh
 ```
 
-**O script irá:**
-1. Construir a imagem Docker
-2. Transferir para o servidor
-3. Parar o container existente
-4. Executar o novo container
-5. Configurar restart automático
-
-## 🌐 Deploy do Frontend
-
-### Passo 1: Configurar Repositório
-
-Certifique-se de que o repositório `hpeixotosp/termo2` está atualizado com as mudanças.
-
-### Passo 2: Deploy via DigitalOcean App Platform
-
-1. Acesse o [DigitalOcean App Platform](https://cloud.digitalocean.com/apps)
-2. Clique em "Create App"
-3. Conecte seu repositório GitHub
-4. Selecione o repositório `termo2`
-5. Configure conforme o arquivo `.do/app.yaml`:
-   - **Environment**: Node.js
-   - **Build Command**: `npm run build`
-   - **Run Command**: `npm start`
-   - **Instance Size**: Basic XXS (gratuito)
-
-### Passo 3: Variáveis de Ambiente
-
-Configure as seguintes variáveis:
-- `NEXT_PUBLIC_API_URL`: `http://143.110.196.243:3000`
-- `NODE_ENV`: `production`
-
-## 🔧 Configurações do Servidor
-
-### Firewall
-
-Certifique-se de que a porta 3000 está aberta:
-
+### Opção 2: Deploy manual
 ```bash
-# No servidor DigitalOcean
-ufw allow 3000
-ufw enable
+# 1. Fazer upload dos arquivos
+scp -r . ubuntu@143.110.196.243:~/termo/
+
+# 2. Conectar ao servidor
+ssh ubuntu@143.110.196.243
+
+# 3. Navegar para o diretório
+cd termo
+
+# 4. Configurar variáveis de ambiente
+cp env.production .env
+
+# 5. Iniciar os serviços
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
-### Docker
+## 🌐 Acessos
 
-Verifique se o Docker está rodando:
+Após o deploy, o jogo estará disponível em:
 
+- **Frontend**: http://143.110.196.243
+- **Backend API**: http://143.110.196.243:3001
+- **MySQL**: localhost:3306 (apenas no servidor)
+
+## 🔧 Gerenciamento dos Serviços
+
+### Verificar status
 ```bash
-# Status do container
-docker ps | grep termo2-backend
-
-# Logs do container
-docker logs termo2-backend
-
-# Reiniciar se necessário
-docker restart termo2-backend
+docker-compose -f docker-compose.prod.yml ps
 ```
 
-## 📊 Monitoramento e Saúde
-
-### Endpoints de Saúde
-
-- **Backend Health**: `http://143.110.196.243:3000/health`
-- **API Stats**: `http://143.110.196.243:3000/api/dictionary-stats`
-
-### Logs do Sistema
-
+### Ver logs
 ```bash
-# Logs do container
-docker logs -f termo2-backend
+# Todos os serviços
+docker-compose -f docker-compose.prod.yml logs
 
-# Logs do sistema
-journalctl -u docker.service -f
+# Serviço específico
+docker-compose -f docker-compose.prod.yml logs backend
+docker-compose -f docker-compose.prod.yml logs frontend
+docker-compose -f docker-compose.prod.yml logs mysql
+```
+
+### Parar serviços
+```bash
+docker-compose -f docker-compose.prod.yml down
+```
+
+### Reiniciar serviços
+```bash
+docker-compose -f docker-compose.prod.yml restart
+```
+
+### Atualizar aplicação
+```bash
+# Parar serviços
+docker-compose -f docker-compose.prod.yml down
+
+# Fazer pull das mudanças
+git pull origin main
+
+# Rebuild e iniciar
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+## 🗄️ Banco de Dados
+
+### Acessar MySQL
+```bash
+docker-compose -f docker-compose.prod.yml exec mysql mysql -u root -p
+```
+
+### Backup do banco
+```bash
+docker-compose -f docker-compose.prod.yml exec mysql mysqldump -u root -p termo_game > backup.sql
+```
+
+### Restaurar backup
+```bash
+docker-compose -f docker-compose.prod.yml exec -T mysql mysql -u root -p termo_game < backup.sql
+```
+
+## 🔒 Configurações de Segurança
+
+### 1. Configurar firewall
+```bash
+sudo ufw allow 22    # SSH
+sudo ufw allow 80    # HTTP
+sudo ufw allow 443   # HTTPS
+sudo ufw enable
+```
+
+### 2. Configurar SSL (opcional)
+```bash
+# Instalar Certbot
+sudo apt install certbot
+
+# Gerar certificado
+sudo certbot certonly --standalone -d 143.110.196.243
+```
+
+## 📊 Monitoramento
+
+### Verificar uso de recursos
+```bash
+docker stats
+```
+
+### Verificar logs do sistema
+```bash
+sudo journalctl -u docker
+```
+
+## 🆘 Troubleshooting
+
+### Problema: Serviços não iniciam
+```bash
+# Verificar logs
+docker-compose -f docker-compose.prod.yml logs
+
+# Verificar se as portas estão livres
+sudo netstat -tlnp | grep :80
+sudo netstat -tlnp | grep :3001
+```
+
+### Problema: Banco de dados não conecta
+```bash
+# Verificar se o MySQL está rodando
+docker-compose -f docker-compose.prod.yml exec mysql mysql -u root -p
+
+# Verificar logs do MySQL
+docker-compose -f docker-compose.prod.yml logs mysql
+```
+
+### Problema: Frontend não carrega
+```bash
+# Verificar se o Next.js está rodando
+docker-compose -f docker-compose.prod.yml logs frontend
+
+# Verificar se o Nginx está rodando
+docker-compose -f docker-compose.prod.yml logs nginx
 ```
 
 ## 🔄 Atualizações
 
-### Backend
+Para atualizar o jogo:
 
-```bash
-cd backend
-./deploy.sh
-```
-
-### Frontend
-
-O frontend será atualizado automaticamente via GitHub:
-1. Faça push para a branch `main`
-2. O DigitalOcean App Platform fará o rebuild automático
-
-## 🐛 Troubleshooting
-
-### Problemas Comuns
-
-1. **Container não inicia**
+1. **Fazer as mudanças** no código local
+2. **Commitar as mudanças**:
    ```bash
-   docker logs termo2-backend
-   docker exec -it termo2-backend sh
+   git add .
+   git commit -m "Update: descrição das mudanças"
+   git push origin main
    ```
-
-2. **API não responde**
+3. **Executar o deploy**:
    ```bash
-   curl http://143.110.196.243:3000/health
-   netstat -tlnp | grep 3000
+   ./deploy.sh
    ```
-
-3. **CORS errors**
-   - Verificar se `FRONTEND_URL` está configurado corretamente
-   - Verificar se o frontend está acessível
-
-### Logs de Debug
-
-```bash
-# Logs detalhados do backend
-docker logs termo2-backend --tail 100
-
-# Status do sistema
-docker system df
-docker stats
-```
-
-## 📈 Escalabilidade
-
-### Backend
-- **Horizontal**: Adicionar mais instâncias do container
-- **Vertical**: Aumentar recursos do servidor
-- **Load Balancer**: Usar Nginx ou HAProxy
-
-### Frontend
-- **CDN**: Configurar Cloudflare ou similar
-- **Cache**: Implementar cache de palavras
-- **Monitoring**: Adicionar New Relic ou DataDog
-
-## 🔒 Segurança
-
-### Recomendações
-
-1. **HTTPS**: Configurar certificado SSL no frontend
-2. **Rate Limiting**: Implementar no backend
-3. **Input Validation**: Validar todas as entradas da API
-4. **Logs**: Monitorar tentativas de acesso suspeitas
 
 ## 📞 Suporte
 
-Para problemas ou dúvidas:
-1. Verificar logs do sistema
-2. Consultar documentação da DigitalOcean
-3. Abrir issue no repositório GitHub
+Se encontrar problemas:
+
+1. Verifique os logs dos serviços
+2. Verifique se todas as portas estão abertas
+3. Verifique se o Docker está rodando
+4. Verifique as configurações de rede
 
 ---
 
-**🎯 Status do Deploy**: Pronto para execução
-**📅 Última Atualização**: $(date)
-**👨‍💻 Desenvolvedor**: Humberto Peixoto
+**🎉 Pronto! Seu jogo Termo está rodando no DigitalOcean!**

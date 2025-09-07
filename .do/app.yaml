@@ -5,8 +5,7 @@ services:
   github:
     repo: hpeixotosp/termo2
     branch: main
-  run_command: npm start
-  build_command: npm run build
+  build_command: npm run build:do
   environment_slug: node-js
   instance_count: 1
   instance_size_slug: basic-xxs
@@ -17,3 +16,9 @@ services:
     value: http://143.110.196.243:3000
   - key: NODE_ENV
     value: production
+  # Configuração para arquivos estáticos
+  static_sites:
+  - name: termo2-static
+    source_dir: /
+    build_command: npm run build:do
+    output_dir: out
